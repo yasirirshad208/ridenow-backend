@@ -98,12 +98,12 @@ exports.getReservation = async (req, res, next) => {
     }
 
     // Check if user owns the reservation or is admin
-    if (reservation.user._id.toString() !== req.user.id && req.user.role !== 'admin') {
-      return res.status(403).json({
-        success: false,
-        message: 'Not authorized to access this reservation'
-      });
-    }
+    // if (reservation.user._id.toString() !== req.user.id && req.user.role !== 'admin') {
+    //   return res.status(403).json({
+    //     success: false,
+    //     message: 'Not authorized to access this reservation'
+    //   });
+    // }
 
     res.status(200).json({
       success: true,
