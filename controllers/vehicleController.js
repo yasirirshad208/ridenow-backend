@@ -3,69 +3,74 @@ const path = require('path'); // For path handling
 
 exports.getAllVehicles = async (req, res, next) => {
   try {
+    // Pagination setup
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 12;
     const skip = (page - 1) * limit;
-    
-    // Default: Show all vehicles (for admin). Public can filter to available only.
+
+    // Default: show all vehicles (for admin). Public sees available only.
     let query = {};
-    
-    // For public views: Default to available only unless explicitly overridden
+
+    // Check if it's admin view
     const isAdminView = req.query.showUnavailable === 'true' || req.query.adminView === 'true';
     if (!isAdminView) {
-      query.availability = true; // Default for public
+      query.availability = true; // Default: only available vehicles
     }
-    
+
     // Filter by type
     if (req.query.type) {
       query.type = req.query.type;
     }
-    
+
     // Filter by price range
     if (req.query.minPrice || req.query.maxPrice) {
       query.pricePerDay = {};
       if (req.query.minPrice) query.pricePerDay.$gte = parseInt(req.query.minPrice);
-      if (req.query.maxPrice) query.pricePerDay.$lte = parseInt(req.maxPrice);
+      if (req.query.maxPrice) query.pricePerDay.$lte = parseInt(req.query.maxPrice); // ✅ Fixed typo (was req.maxPrice)
     }
-    
+
     // Filter by brand
     if (req.query.brand) {
       query.brand = new RegExp(req.query.brand, 'i');
     }
-    
+
     // Filter by fuel type
     if (req.query.fuelType) {
       query.fuelType = req.query.fuelType;
     }
-    
+
     // Filter by transmission
     if (req.query.transmission) {
       query.transmission = req.query.transmission;
     }
-    
-    // Explicit availability filter (overrides default; '' or undefined means no filter)
+
+    // Explicit availability filter (overrides default)
     if (req.query.availability !== undefined && req.query.availability !== '') {
       query.availability = req.query.availability === 'true';
     }
-    
-    // Search by name or description
+
+    // Search by name, description, brand, or model
     if (req.query.search) {
+      const searchRegex = new RegExp(req.query.search, 'i');
       query.$or = [
-        { name: new RegExp(req.query.search, 'i') },
-        { description: new RegExp(req.query.search, 'i') },
-        { brand: new RegExp(req.query.search, 'i') },
-        { model: new RegExp(req.query.search, 'i') }
+        { name: searchRegex },
+        { description: searchRegex },
+        { brand: searchRegex },
+        { model: searchRegex }
       ];
     }
 
+    // Fetch paginated results
     const vehicles = await Vehicle.find(query)
       .skip(skip)
       .limit(limit)
       .sort({ createdAt: -1 });
 
+    // Count total documents
     const total = await Vehicle.countDocuments(query);
     const totalPages = Math.ceil(total / limit);
 
+    // Response
     res.status(200).json({
       success: true,
       count: vehicles.length,
@@ -73,7 +78,9 @@ exports.getAllVehicles = async (req, res, next) => {
         page,
         limit,
         total,
-        totalPages
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
       },
       data: vehicles
     });
@@ -83,10 +90,11 @@ exports.getAllVehicles = async (req, res, next) => {
 };
 
 
+
 exports.getVehicle = async (req, res, next) => {
   try {
-    const vehicle = await Vehicle.findById(req.params.id);
-    
+    const vehicle = await Vehicle.findOne({ slug: req.params.slug });
+
     if (!vehicle) {
       return res.status(404).json({
         success: false,
@@ -102,6 +110,7 @@ exports.getVehicle = async (req, res, next) => {
     next(error);
   }
 };
+
 
 exports.createVehicle = async (req, res, next) => {
   try {

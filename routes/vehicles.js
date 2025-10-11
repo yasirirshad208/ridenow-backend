@@ -15,8 +15,10 @@ router.route('/')
   .get(getAllVehicles)
   .post(protect, authorize('admin'), upload.array('images', 5), createVehicle);
 
-router.route('/:id')
+router.route('/:slug')
   .get(getVehicle)
+
+router.route('/:id')
   .put(protect, authorize('admin'), updateVehicle)
   .delete(protect, authorize('admin'), deleteVehicle);
 
