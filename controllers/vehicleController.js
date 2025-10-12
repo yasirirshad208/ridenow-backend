@@ -26,7 +26,7 @@ exports.getAllVehicles = async (req, res, next) => {
     if (req.query.minPrice || req.query.maxPrice) {
       query.pricePerDay = {};
       if (req.query.minPrice) query.pricePerDay.$gte = parseInt(req.query.minPrice);
-      if (req.query.maxPrice) query.pricePerDay.$lte = parseInt(req.query.maxPrice); // ✅ Fixed typo (was req.maxPrice)
+      if (req.query.maxPrice) query.pricePerDay.$lte = parseInt(req.query.maxPrice);
     }
 
     // Filter by brand
@@ -42,6 +42,18 @@ exports.getAllVehicles = async (req, res, next) => {
     // Filter by transmission
     if (req.query.transmission) {
       query.transmission = req.query.transmission;
+    }
+
+    // Filter by seating capacity (range)
+    if (req.query.minSeatingCapacity || req.query.maxSeatingCapacity) {
+      query.seatingCapacity = {};
+      if (req.query.minSeatingCapacity) query.seatingCapacity.$gte = parseInt(req.query.minSeatingCapacity);
+      if (req.query.maxSeatingCapacity) query.seatingCapacity.$lte = parseInt(req.query.maxSeatingCapacity);
+    }
+
+    // Filter by exact seating capacity
+    if (req.query.seatingCapacity) {
+      query.seatingCapacity = parseInt(req.query.seatingCapacity);
     }
 
     // Explicit availability filter (overrides default)
@@ -88,7 +100,6 @@ exports.getAllVehicles = async (req, res, next) => {
     next(error);
   }
 };
-
 
 
 exports.getVehicle = async (req, res, next) => {
