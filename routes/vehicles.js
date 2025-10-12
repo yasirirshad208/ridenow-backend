@@ -19,7 +19,7 @@ router.route('/:slug')
   .get(getVehicle)
 
 router.route('/:id')
-  .put(protect, authorize('admin'), updateVehicle)
+  .put(protect, authorize('admin'), upload.array('images'), updateVehicle)
   .delete(protect, authorize('admin'), deleteVehicle);
 
 module.exports = router;
