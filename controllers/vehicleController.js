@@ -194,7 +194,7 @@ exports.updateVehicle = async (req, res, next) => {
       // });
       
       req.files.forEach(file => {
-        const imagePath = `/uploads/vehicles/${file.filename}`;
+        const imagePath = `/uploads/${file.filename}`;
         images.push(imagePath);
       });
       updateData.images = images; // Update the array
