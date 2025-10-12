@@ -4,7 +4,8 @@ const {
   getUserReservations,
   getReservation,
   cancelReservation,
-  updateReservationStatus
+  updateReservationStatus,
+  getRevenueStats
 } = require('../controllers/reservationController');
 const { protect, authorize } = require('../middleware/auth');
 
@@ -22,5 +23,8 @@ router.route('/:id')
 
 router.route('/:id/status')
   .put(protect, authorize('admin'), updateReservationStatus);
+
+  router.route('/stats/revenue')
+  .get(protect, authorize('admin'), getRevenueStats);
 
 module.exports = router;

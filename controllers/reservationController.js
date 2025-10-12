@@ -178,3 +178,81 @@ exports.updateReservationStatus = async (req, res, next) => {
     next(error);
   }
 };
+
+
+
+// Add this to your reservationController.js
+
+exports.getRevenueStats = async (req, res, next) => {
+  try {
+    // Get total revenue from all completed reservations
+    const totalRevenueResult = await Reservation.aggregate([
+      {
+        $match: {
+          status: 'completed'
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          totalRevenue: { $sum: '$totalCost' }
+        }
+      }
+    ]);
+
+    const totalRevenue = totalRevenueResult.length > 0 ? totalRevenueResult[0].totalRevenue : 0;
+
+    // Get last 30 days of revenue grouped by day
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const monthlyRevenueData = await Reservation.aggregate([
+      {
+        $match: {
+          status: 'completed',
+          createdAt: { $gte: thirtyDaysAgo }
+        }
+      },
+      {
+        $group: {
+          _id: {
+            $dateToString: {
+              format: '%Y-%m-%d',
+              date: '$createdAt'
+            }
+          },
+          revenue: { $sum: '$totalCost' },
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $sort: { _id: 1 }
+      }
+    ]);
+
+    // Format data for graph
+    const graphData = monthlyRevenueData.map(item => ({
+      date: item._id,
+      revenue: item.revenue,
+      reservations: item.count
+    }));
+
+    // Calculate last month total
+    const lastMonthTotal = monthlyRevenueData.reduce((sum, item) => sum + item.revenue, 0);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        totalRevenue,
+        lastMonthRevenue: lastMonthTotal,
+        graphData,
+        period: {
+          from: thirtyDaysAgo.toISOString().split('T')[0],
+          to: new Date().toISOString().split('T')[0]
+        }
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
