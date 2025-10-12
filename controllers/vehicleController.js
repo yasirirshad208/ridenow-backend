@@ -214,7 +214,7 @@ exports.updateVehicle = async (req, res, next) => {
     next(error);
   }
 };
-
+//hjk
 exports.deleteVehicle = async (req, res, next) => {
   try {
     const vehicle = await Vehicle.findById(req.params.id);
